@@ -1,9 +1,10 @@
 import requests
 from bs4 import BeautifulSoup
+from app import config
 
 nitb_session = None
 
-def get_session(id="sahibzada.m.yousaf@icta.gov.pk", passw="Adcg@Nitb"):
+def get_session(id=config.NITB_ID, passw=config.NITB_PASS):
     global nitb_session
     nitb_session = requests.session()
     url = "https://admin-icta.nitb.gov.pk/login"
