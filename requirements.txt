@@ -1,0 +1,10 @@
+fastapi
+waitress
+mysql-connector-python
+python-jose
+passlib[bcrypt]
+requests
+beautifulsoup4
+reportlab
+python-dotenv
+
