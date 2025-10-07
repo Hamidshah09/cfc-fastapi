@@ -3,23 +3,26 @@ from bs4 import BeautifulSoup
 from fastapi import APIRouter, HTTPException, logger
 from app import config
 from app.database import open_con
-from app.nitb import get_session
+from app.nitb import nitb_session, get_session
 
 router = APIRouter()
 
 @router.get("/check/{cnic}")
-def check_domicile_status(cnic:str):
+def check_domicile_status(cnic: str):
     if not cnic:
-        raise HTTPException(status_code=404, detail="Record not found")
+        return {"error": "CNIC is required"}
 
-    clean_cnic = re.sub(r"\D", '', cnic)
+    # Remove non-digits (handles both '61101-4561237-8' and '6110145612378')
+    clean_cnic = re.sub(r"\D", "", cnic)
     if len(clean_cnic) != 13:
-        raise HTTPException(status_code=401, detail="cnic is not 13 digits")
+        return {"error": "CNIC must be 13 digits (e.g., 61101-4561237-8)"}
 
+    
     try:
         con, cur = open_con()
         if type(con) is str:
-            raise HTTPException(status_code=500, detail=cur)
+            return {"error": f"Database connection failed: {cur}"}
+
         cur.execute(
             "SELECT receipt_no, Status, First_Name, remarks FROM domicile WHERE cnic = %s",
             (clean_cnic,)
@@ -29,13 +32,12 @@ def check_domicile_status(cnic:str):
         con.close()
 
         if result:
-            return {"count": len(result), "result": result}
+            return {"status": result}
         else:
-            raise HTTPException(status_code=404, detail="Record not found")
+            return {"error": "Record not found"}
 
     except Exception as exc:
-        # logger.exception("MySQL query failed: %s", exc)
-        raise HTTPException(status_code=404, detail=exc)
+        return {"error": f"Something went wrong: {str(exc)}"}
 
 @router.get('/statistics/check')
 def statistics():
@@ -47,22 +49,25 @@ def statistics():
 
     url = f"{config.NITB_BASE}/dashboard/statistics"
     try:
-        page = nitb_session.get(url, timeout=10)
+        page = nitb_session.get(url, timeout=30)
+        print(page.content)
         page.raise_for_status()
-    except Exception as exc:
+    except Exception:
         raise HTTPException(status_code=500, detail="Failed to fetch IDP data")
 
     soup = BeautifulSoup(page.content, 'html.parser')
     details = {}
+
     for divs in soup.find_all('div', class_='bd-highlight'):
         data = divs.text.split()
         if not data:
             continue
         if data[0].strip() == 'Domicile' and len(data) >= 4:
-            details['domicile'] = data[3]
+            details['domicile'] = int(data[3]) if data[3].isdigit() else data[3]
         elif data[0].strip() == 'IDP' and len(data) >= 4:
-            details['idp'] = data[3]
+            details['idp'] = int(data[3]) if data[3].isdigit() else data[3]
 
     if details:
-        return {'result':details}
+        return details  # 👈 return dict directly instead of {'result': details}
+
     raise HTTPException(status_code=404, detail="No record found or IDP not approved")
