@@ -1,31 +1,32 @@
-from bs4 import BeautifulSoup
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from app.auth import get_current_user
-from app.database import open_con
+from app.database import open_arms_con
 from app.nitb import approve, nitb_session, get_session
 from typing import Optional, List
 import re
+from datetime import datetime
 
 router = APIRouter()
 
 @router.get("/")
-def list_pending(user=Depends(get_current_user)):
-    con, cur = open_con()
+def list_pending():
+    con, cur = open_arms_con()
     if type(con) is str:
         raise HTTPException(status_code=500, detail=cur)
 
-    cur.execute("SELECT * FROM need_approvals WHERE file_status='Pending' ORDER BY id DESC;")
+    cur.execute("SELECT * FROM approver_app.need_approvals WHERE file_status='Pending' ORDER BY id DESC;")
     data = cur.fetchall()
     cur.close()
     con.close()
-    return {"count": len(data), "data": data}
+    return {"data": data}
 
 
 @router.post("/approve/{id}")
-def approve_request(id: int, user=Depends(get_current_user)):
-    con, cur = open_con()
+def approve_request(id: int):
+    con, cur = open_arms_con()
     cur.execute("SELECT url FROM need_approvals WHERE id=%s;", (id,))
     row = cur.fetchone()
+    print(row)
     if not row:
         raise HTTPException(status_code=404, detail="Record not found")
 
@@ -40,8 +41,8 @@ def approve_request(id: int, user=Depends(get_current_user)):
 
 
 @router.post("/deliver/{id}")
-def deliver_request(id: int, user=Depends(get_current_user)):
-    con, cur = open_con()
+def deliver_request(id: int):
+    con, cur = open_arms_con()
     cur.execute("SELECT url FROM need_approvals WHERE id=%s;", (id,))
     row = cur.fetchone()
     if not row:
@@ -58,8 +59,8 @@ def deliver_request(id: int, user=Depends(get_current_user)):
 
 
 @router.post("/approve-all")
-def approve_all(user=Depends(get_current_user)):
-    con, cur = open_con()
+def approve_all():
+    con, cur = open_arms_con()
     cur.execute("SELECT url FROM need_approvals WHERE file_status='Pending';")
     rows = cur.fetchall()
 
@@ -76,8 +77,8 @@ def approve_all(user=Depends(get_current_user)):
 
 
 @router.post("/trash/{id}")
-def trash_request(id: int, user=Depends(get_current_user)):
-    con, cur = open_con()
+def trash_request(id: int):
+    con, cur = open_arms_con()
     cur.execute("UPDATE need_approvals SET file_status='Ignored' WHERE id=%s;", (id,))
     con.commit()
     cur.close()
@@ -86,8 +87,8 @@ def trash_request(id: int, user=Depends(get_current_user)):
 
 
 @router.post("/trash-all")
-def trash_all(user=Depends(get_current_user)):
-    con, cur = open_con()
+def trash_all():
+    con, cur = open_arms_con()
     cur.execute("UPDATE need_approvals SET file_status='Ignored' WHERE file_status='Pending';")
     con.commit()
     cur.close()
@@ -95,12 +96,22 @@ def trash_all(user=Depends(get_current_user)):
     return {"status": "success", "message": "All pending requests ignored"}
 
 @router.get("/report")
-def generate_report(report_date1: str, report_date2: str, user=Depends(get_current_user)):
-    con, cur = open_con()
-    cur.execute("SELECT url, cnic, name, license_no, request_type FROM need_approvals WHERE date(updated_at) BETWEEN %s AND %s;", 
-                (report_date1, report_date2))
+def generate_report(
+    report_date1: str = Query(..., description="Start date in YYYY-MM-DD format"),
+    report_date2: str = Query(..., description="End date in YYYY-MM-DD format")
+):
+    con, cur = open_arms_con()
+    cur.execute(
+        """
+        SELECT url, cnic, name, license_no, request_type 
+        FROM need_approvals 
+        WHERE date(updated_at) BETWEEN %s AND %s;
+        """,
+        (report_date1, report_date2)
+    )
     records = cur.fetchall()
     cur.close()
     con.close()
-    return {"count": len(records), "records": records}
+    return {"count": len(records), "data": records}
+
 
