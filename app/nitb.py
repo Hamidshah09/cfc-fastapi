@@ -34,37 +34,127 @@ def get_session(id=config.NITB_ID, passw=config.NITB_PASS):
     else:
         print("❌ Invalid credentials")
         return False
-
-
-def approve(url, status):
+def check_session():
     global nitb_session
     if nitb_session is None:
         nitb_session = get_session()
+        return
 
-    if status == "approval":
-        show_url = url.replace("/edit", "/show")
-        details_page = nitb_session.get(show_url)
-        details_soup = BeautifulSoup(details_page.content, "html.parser")
-        token = None
-        for links in details_soup.find_all("input", type="hidden"):
-            token = links.attrs["value"]
-
-        update_url = show_url.replace("/show", "") + "/status/update"
-        params = {
-            "_token": token,
-            "application_status_id": "8",
-            "remarks": "Ok",
-            "submit": "update",
-        }
-        response = nitb_session.post(update_url, data=params)
-
-    elif status == "deliver":
-        deliver_url = url.replace("/edit", "/deliver")
-        response = nitb_session.get(deliver_url)
-
-    else:
-        return False
+    test_url = "https://admin-icta.nitb.gov.pk"
+    response = nitb_session.get(test_url)
 
     if response.status_code == 200 and response.url != "https://admin-icta.nitb.gov.pk/login":
         return True
-    return False
+    else:
+        nitb_session = get_session()
+        return nitb_session is not False
+
+def approve(url, status, **args):
+    global nitb_session
+
+    if nitb_session is None:
+        nitb_session = get_session()
+
+    if status not in ("approval", "deliver"):
+        return {
+            "success": False,
+            "code": "INVALID_STATUS",
+            "message": "Invalid approval status provided"
+        }
+
+    try:
+        if status == "approval":
+            # Normalize URL
+            show_url = url.replace("/edit", "/show") if "/show" not in url else url
+
+            check_session()
+
+            details_page = nitb_session.get(show_url)
+            if details_page.status_code != 200:
+                return {
+                    "success": False,
+                    "code": "DETAILS_FETCH_FAILED",
+                    "message": "Failed to load application details page"
+                }
+
+            details_soup = BeautifulSoup(details_page.content, "html.parser")
+
+            # Extract CSRF token
+            token_input = details_soup.find("input", {"type": "hidden"})
+            if not token_input:
+                return {
+                    "success": False,
+                    "code": "TOKEN_NOT_FOUND",
+                    "message": "CSRF token not found on details page"
+                }
+
+            token = token_input.get("value")
+
+            # Renewal validation
+            if args.get("request_type") == "Renewal":
+                request_type = None
+
+                for row in details_soup.find_all("div", class_="row"):
+                    label = row.find("div", class_="text-muted")
+                    if label and "Request Type" in label.get_text(strip=True):
+                        value_div = label.find_next_sibling("div")
+                        request_type = value_div.get_text(strip=True)
+                        break
+
+                if not request_type:
+                    return {
+                        "success": False,
+                        "code": "REQUEST_TYPE_NOT_FOUND",
+                        "message": "Request type not found on page"
+                    }
+
+                if not request_type.startswith("Renewal"):
+                    return {
+                        "success": False,
+                        "code": "NOT_RENEWAL",
+                        "message": f"Request type is '{request_type}', not Renewal"
+                    }
+
+            update_url = show_url.replace("/show", "") + "/status/update"
+
+            params = {
+                "_token": token,
+                "application_status_id": "8",
+                "remarks": "Ok",
+                "submit": "update",
+            }
+
+            response = nitb_session.post(update_url, data=params)
+
+        else:  # deliver
+            deliver_url = url.replace("/edit", "/deliver")
+            response = nitb_session.get(deliver_url)
+
+        # Final validation
+        if response.status_code != 200:
+            return {
+                "success": False,
+                "code": "HTTP_ERROR",
+                "message": f"Server returned status {response.status_code}"
+            }
+
+        if "login" in response.url:
+            return {
+                "success": False,
+                "code": "SESSION_EXPIRED",
+                "message": "Session expired, login required"
+            }
+
+        return {
+            "success": True,
+            "code": "APPROVED",
+            "message": "Application approved successfully"
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "code": "EXCEPTION",
+            "message": str(e)
+        }
+

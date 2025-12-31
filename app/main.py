@@ -1,8 +1,19 @@
 from fastapi import FastAPI
 from app.routes import auth_routes, idp_routes, report_routes, domicile_routes, arms_routes
 from app.nitb import get_session
+from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="Approval Service API")
+app = FastAPI(title="Approval Service API",  root_path="/fastapi")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://cfc-ict.com",
+        "http://localhost:5173"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.on_event("startup")
 async def startup_event():

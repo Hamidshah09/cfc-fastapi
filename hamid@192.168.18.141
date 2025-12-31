@@ -1,0 +1,20 @@
+# .env
+SECRET_KEY=supersecretkey123   # change this to a long random string
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+
+DB_HOST=127.0.0.1
+DB_NAME=domicile_reports
+DB_USER=root
+DB_PASS=2891dimah
+DB_PORT=3306
+
+NITB_ID=hamidshah09@gmail.com
+NITB_PASS="Hamid@NITB@CFC@2025@06#25"
+NITB_BASE=https://admin-icta.nitb.gov.pk
+
+ARMS_DB_HOST=192.168.18.21
+ARMS_DB_NAME=approver_app
+ARMS_DB_USER=superadmin
+ARMS_DB_PASS=Superadmin123
+ARMS_DB_PORT=3306
