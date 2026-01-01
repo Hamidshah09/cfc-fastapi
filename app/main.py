@@ -3,7 +3,7 @@ from app.routes import auth_routes, idp_routes, noc_routes, report_routes, domic
 from app.nitb import get_session
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="Approval Service API",  root_path="/fastapi")
+app = FastAPI(title="Approval Service API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
