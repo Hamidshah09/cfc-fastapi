@@ -24,7 +24,7 @@ def issue_token(data: TokenRequest):
 
     # Fetch user from DB
     cur.execute(
-        "SELECT user_login, user_pass, role, user_status FROM users WHERE user_login = %s and user_pass = %s",
+        "SELECT user_id, user_login, user_pass, role, user_status FROM users WHERE user_login = %s and user_pass = %s",
         (data.username, data.password)
     )
     user = cur.fetchone()
@@ -48,5 +48,6 @@ def issue_token(data: TokenRequest):
 
     return {
         "access_token": token,
-        "token_type": "bearer"
+        "token_type": "bearer",
+        "user": user
     }
