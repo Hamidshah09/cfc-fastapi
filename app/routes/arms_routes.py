@@ -47,7 +47,7 @@ def approve_request(id: int):
         con.close()
         raise HTTPException(status_code=404, detail="Record not found")
 
-    result = approve(row["url"], "approval")
+    result = approve(row["url"], "arms-approval")
     if not result or not result.get("success", True):
         cur.close()
         con.close()
@@ -68,7 +68,7 @@ def approve_request(id: int):
 def approve_url(payload: ApproveUrlRequest):
     result = approve(
         payload.url,
-        "approval",
+        "arms-approval",
         request_type="Renewal"
     )
 
@@ -90,7 +90,7 @@ def deliver_request(id: int):
         con.close()
         raise HTTPException(status_code=404, detail="Record not found")
 
-    result = approve(row["url"], "deliver")
+    result = approve(row["url"], "arms-deliver")
     if not result or not result.get("success", True):
         cur.close()
         con.close()
@@ -116,7 +116,7 @@ def approve_all():
 
     approved_count = 0
     for row in rows:
-        result = approve(row["url"], "approval")
+        result = approve(row["url"], "arms-approval")
         if result and result.get("success", True):
             approved_count += 1
 

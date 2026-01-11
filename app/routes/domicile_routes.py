@@ -3,9 +3,17 @@ from bs4 import BeautifulSoup
 from fastapi import APIRouter, HTTPException, logger
 from app import config
 from app.database import open_con
-from app.nitb import nitb_session, get_session
+from app.nitb import approve, nitb_session, get_session
 
 router = APIRouter()
+
+@router.post("/approve/{id}")
+def approve_request(id: int):
+    
+    result = approve(f"https://admin-icta.nitb.gov.pk/domicile/application/{id}", "domicile-approval")
+    if result is None or not result.get("success", True):
+        raise HTTPException(status_code=500, detail="NITB approval failed")
+    return {"status": "success", "message": f"Request {id} approved"}
 
 @router.get("/check/{cnic}")
 def check_domicile_status(cnic: str):

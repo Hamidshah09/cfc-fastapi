@@ -55,7 +55,7 @@ def approve(url, status, **args):
     if nitb_session is None:
         nitb_session = get_session()
 
-    if status not in ("approval", "deliver"):
+    if status not in ("arms-approval", "arms-deliver", "domicile-approval"):
         return {
             "success": False,
             "code": "INVALID_STATUS",
@@ -63,7 +63,7 @@ def approve(url, status, **args):
         }
 
     try:
-        if status == "approval":
+        if status == "arms-approval":
             # Normalize URL
             show_url = url.replace("/edit", "/show") if "/show" not in url else url
 
@@ -126,10 +126,47 @@ def approve(url, status, **args):
 
             response = nitb_session.post(update_url, data=params)
 
-        else:  # deliver
+        elif status == "arms-deliver":  # deliver
             deliver_url = url.replace("/edit", "/deliver")
             response = nitb_session.get(deliver_url)
+        elif status == "domicile-approval":  # domicile approval
+            check_session()
 
+            details_page = nitb_session.get(url)
+            if details_page.status_code != 200:
+                return {
+                    "success": False,
+                    "code": "DETAILS_FETCH_FAILED",
+                    "message": "Failed to load domicile details page"
+                }
+
+            details_soup = BeautifulSoup(details_page.content, "html.parser")
+
+            # Extract CSRF token
+            for input in details_soup.find_all("input", {"type": "hidden"}):
+                if input.attrs['name'] == '_token':
+                    token = input.attrs['value']
+                if input.attrs['name'] == 'application_id':
+                        application_id = input.attrs['value']    
+
+            if not token or not application_id:
+                return {
+                    "success": False,
+                    "code": "TOKEN_NOT_FOUND",
+                    "message": "CSRF token or Application ID not found on details page"
+                }
+            
+            update_url = "https://admin-icta.nitb.gov.pk/domicile/application/status/update"
+
+            params = {
+                "_token": token,
+                "application_id": application_id,
+                "application_status_id": "8",
+                "remarks": "Approved",
+                "submit": "update",
+            }
+
+            response = nitb_session.post(update_url, data=params)
         # Final validation
         if response.status_code != 200:
             return {
