@@ -118,8 +118,13 @@ def get_letter(
            JOIN dispatch_dairy d ON d.Letter_ID=l.Letter_ID
            LEFT JOIN noc_ict_applicants a ON a.Letter_ID=l.Letter_ID
            WHERE l.Letter_ID=%s
+<<<<<<< HEAD
              AND d.Letter_Type='NOC Letter'
            ORDER BY a.App_ID""",
+=======
+             AND d.Letter_Type='NOC ICT Letter'
+           ORDER BY a.App_ID DESC""",
+>>>>>>> 8812073b0b497a4d8260d2f732f2a64afcbfba99
         (letter_id,)
     )
     rows = cur.fetchall()
@@ -146,7 +151,11 @@ def search_letters(
                             On l.Letter_ID = a.Letter_ID
                             Inner Join dispatch_dairy as d
                             on d.Letter_ID = l.Letter_ID
+<<<<<<< HEAD
                             Where d.Dispatch_No = %s And d.Letter_Type = 'NOC Letter' order by l.Letter_ID desc;"""
+=======
+                            Where d.Dispatch_No = %s And d.Letter_Type = 'NOC ICT Letter' ORDER BY l.Letter_ID DESC Limit 50;"""
+>>>>>>> 8812073b0b497a4d8260d2f732f2a64afcbfba99
         cur.execute(Query, (dispatch_no,))
     elif cnic is not None:
         Query = """SELECT l.Letter_ID, d.Dispatch_No, l.Letter_Date, l.Letter_sent_to, a.CNIC, a.Applicant_Name, a.Relation, a.Applicant_FName 
@@ -155,7 +164,11 @@ def search_letters(
                             on l.Letter_ID = a.Letter_ID
                             Inner Join dispatch_dairy as d
                             on d.Letter_ID = l.Letter_ID
+<<<<<<< HEAD
                             Where a.CNIC = %s And d.Letter_Type = 'NOC Letter' order by l.Letter_ID desc;"""
+=======
+                            Where a.CNIC = %s And d.Letter_Type = 'NOC ICT Letter' ORDER BY l.Letter_ID DESC Limit 50;"""
+>>>>>>> 8812073b0b497a4d8260d2f732f2a64afcbfba99
         cur.execute(Query, (cnic,))
     elif date is not None:
         Query = """SELECT l.Letter_ID, d.Dispatch_No, l.Letter_Date, l.Letter_Sent_to, a.CNIC, a.Applicant_Name, a.Relation, a.Applicant_FName 
@@ -164,7 +177,11 @@ def search_letters(
                         On l.Letter_ID = a.Letter_ID
                         Inner Join dispatch_dairy as d
                         on d.Letter_ID = l.Letter_ID
+<<<<<<< HEAD
                         Where l.Letter_Date = %s And d.Letter_Type = 'NOC Letter' order by l.Letter_ID desc;"""
+=======
+                        Where l.Letter_Date = %s And d.Letter_Type = 'NOC ICT Letter' ORDER BY l.Letter_ID DESC Limit 50;"""
+>>>>>>> 8812073b0b497a4d8260d2f732f2a64afcbfba99
         cur.execute(Query, (date,))
     else:
         Query = """SELECT l.Letter_ID, d.Dispatch_No, l.Letter_Date, l.Letter_sent_to, a.CNIC, a.Applicant_Name, a.Relation, a.Applicant_FName 
@@ -173,7 +190,11 @@ def search_letters(
                             on l.Letter_ID = a.Letter_ID
                             Inner Join dispatch_dairy as d
                             on d.Letter_ID = l.Letter_ID
+<<<<<<< HEAD
                             Where d.Letter_Type = 'NOC Letter' order by l.Letter_ID desc;"""
+=======
+                            Where d.Letter_Type = 'NOC ICT Letter' ORDER BY l.Letter_ID DESC Limit 50;"""
+>>>>>>> 8812073b0b497a4d8260d2f732f2a64afcbfba99
         cur.execute(Query)
     data = cur.fetchall()
     cur.close()
