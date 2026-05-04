@@ -201,9 +201,9 @@ def get_tehsils(district_id: Optional[int] = Query(None, description="Filter teh
             raise HTTPException(status_code=500, detail=f"Database connection failed: {cur}")
 
         if district_id is not None:
-            cur.execute("SELECT * FROM Tehsils WHERE district_id = %s;", [district_id])
+            cur.execute("SELECT * FROM tehsils WHERE district_id = %s;", [district_id])
         else:
-            cur.execute("SELECT * FROM Tehsils;")
+            cur.execute("SELECT * FROM tehsils;")
 
         rows = cur.fetchall()
         cur.close()
@@ -227,7 +227,7 @@ def get_districts():
             logger.error("Database connection failed: %s", cur)
             raise HTTPException(status_code=500, detail=f"Database connection failed: {cur}")
 
-        cur.execute("Select * from Districts;")
+        cur.execute("Select * from districts;")
         rows = cur.fetchall()
         cur.close()
         con.close()
