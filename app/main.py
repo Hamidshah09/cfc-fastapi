@@ -1,5 +1,6 @@
 from fastapi import FastAPI
-from app.routes import auth_routes, idp_routes, report_routes, domicile_routes, arms_routes, noc_routes, noc_ict_routes, verification_letter_routes
+from app.routes import auth_routes, idp_routes, noc_routes, report_routes, domicile_routes, arms_routes, noc_ict_routes, verification_letter_routes
+# ,noc_routes
 from app.nitb import get_session
 from fastapi.middleware.cors import CORSMiddleware
 
