@@ -8,7 +8,7 @@ from app.nitb import nitb_session, get_session
 from pydantic import BaseModel
 from typing import List
 
-router = APIRouter(prefix="/noc-other-district", tags=["NOC OTHER DISTRICT"])
+router = APIRouter(prefix="/noc-ict", tags=["NOC ICT"])
 class ApplicantIn(BaseModel):
     cnic: str
     name: str
@@ -27,7 +27,7 @@ def create_letter(data: LetterCreate, user=Depends(get_current_user)):
     con, cur = open_con()
 
     cur.execute(
-        """INSERT INTO noc_letters
+        """INSERT INTO noc_ict_letters
            (Letter_Date, Letter_sent_to, Remarks)
            VALUES (%s,%s,%s)""",
         (data.letter_date, data.district, data.remarks)
@@ -46,14 +46,14 @@ def create_letter(data: LetterCreate, user=Depends(get_current_user)):
     cur.execute(
         """INSERT INTO dispatch_dairy
            (Dispatch_No, Letter_Type, Letter_ID)
-           VALUES (%s,'NOC Letter',%s)""",
+           VALUES (%s,'NOC ICT Letter',%s)""",
         (dispatch_no, letter_id)
     )
     con.commit()
 
     for a in data.applicants:
         cur.execute(
-            """INSERT INTO noc_applicants
+            """INSERT INTO noc_ict_applicants
                (Letter_ID,CNIC,Applicant_Name,Relation,Applicant_FName)
                VALUES (%s,%s,%s,%s,%s)""",
             (letter_id, a.cnic, a.name, a.relation, a.father_name)
@@ -118,7 +118,7 @@ def get_letter(
            JOIN dispatch_dairy d ON d.Letter_ID=l.Letter_ID
            LEFT JOIN noc_ict_applicants a ON a.Letter_ID=l.Letter_ID
            WHERE l.Letter_ID=%s
-             AND d.Letter_Type='NOC Letter'
+             AND d.Letter_Type='NOC ICT Letter'
            ORDER BY a.App_ID""",
         (letter_id,)
     )
@@ -146,7 +146,7 @@ def search_letters(
                             On l.Letter_ID = a.Letter_ID
                             Inner Join dispatch_dairy as d
                             on d.Letter_ID = l.Letter_ID
-                            Where d.Dispatch_No = %s And d.Letter_Type = 'NOC Letter' order by l.Letter_ID desc;"""
+                            Where d.Dispatch_No = %s And d.Letter_Type = 'NOC ICT Letter' order by l.Letter_ID desc;"""
         cur.execute(Query, (dispatch_no,))
     elif cnic is not None:
         Query = """SELECT l.Letter_ID, d.Dispatch_No, l.Letter_Date, l.Letter_sent_to, a.CNIC, a.Applicant_Name, a.Relation, a.Applicant_FName 
@@ -155,7 +155,7 @@ def search_letters(
                             on l.Letter_ID = a.Letter_ID
                             Inner Join dispatch_dairy as d
                             on d.Letter_ID = l.Letter_ID
-                            Where a.CNIC = %s And d.Letter_Type = 'NOC Letter' order by l.Letter_ID desc;"""
+                            Where a.CNIC = %s And d.Letter_Type = 'NOC ICT Letter' order by l.Letter_ID desc;"""
         cur.execute(Query, (cnic,))
     elif date is not None:
         Query = """SELECT l.Letter_ID, d.Dispatch_No, l.Letter_Date, l.Letter_Sent_to, a.CNIC, a.Applicant_Name, a.Relation, a.Applicant_FName 
@@ -164,7 +164,7 @@ def search_letters(
                         On l.Letter_ID = a.Letter_ID
                         Inner Join dispatch_dairy as d
                         on d.Letter_ID = l.Letter_ID
-                        Where l.Letter_Date = %s And d.Letter_Type = 'NOC Letter' order by l.Letter_ID desc;"""
+                        Where l.Letter_Date = %s And d.Letter_Type = 'NOC ICT Letter' order by l.Letter_ID desc;"""
         cur.execute(Query, (date,))
     else:
         Query = """SELECT l.Letter_ID, d.Dispatch_No, l.Letter_Date, l.Letter_sent_to, a.CNIC, a.Applicant_Name, a.Relation, a.Applicant_FName 
@@ -173,7 +173,7 @@ def search_letters(
                             on l.Letter_ID = a.Letter_ID
                             Inner Join dispatch_dairy as d
                             on d.Letter_ID = l.Letter_ID
-                            Where d.Letter_Type = 'NOC Letter' order by l.Letter_ID desc;"""
+                            Where d.Letter_Type = 'NOC ICT Letter' order by l.Letter_ID desc;"""
         cur.execute(Query)
     data = cur.fetchall()
     cur.close()
