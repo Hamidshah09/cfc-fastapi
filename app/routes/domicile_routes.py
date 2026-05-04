@@ -2,7 +2,6 @@ import re
 import base64
 import logging
 from typing import Optional
-from tkinter import messagebox
 from bs4 import BeautifulSoup
 from fastapi import APIRouter, HTTPException, Body, Query, File, UploadFile
 from io import BytesIO

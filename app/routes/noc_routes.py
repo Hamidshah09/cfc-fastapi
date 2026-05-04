@@ -1,10 +1,7 @@
 import re
-from bs4 import BeautifulSoup
-from fastapi import APIRouter, Depends, HTTPException, logger
-from app import config
+from fastapi import APIRouter, Depends, HTTPException
 from app.auth import get_current_user
 from app.database import open_con
-from app.nitb import nitb_session, get_session
 from pydantic import BaseModel
 from typing import List
 
@@ -164,11 +161,8 @@ def search_letters(
                             on l.Letter_ID = a.Letter_ID
                             Inner Join dispatch_dairy as d
                             on d.Letter_ID = l.Letter_ID
-<<<<<<< HEAD
                             Where a.CNIC = %s And d.Letter_Type = 'NOC Letter' order by l.Letter_ID desc;"""
-=======
                             Where a.CNIC = %s And d.Letter_Type = 'NOC ICT Letter' ORDER BY l.Letter_ID DESC Limit 50;"""
->>>>>>> 8812073b0b497a4d8260d2f732f2a64afcbfba99
         cur.execute(Query, (cnic,))
     elif date is not None:
         Query = """SELECT l.Letter_ID, d.Dispatch_No, l.Letter_Date, l.Letter_Sent_to, a.CNIC, a.Applicant_Name, a.Relation, a.Applicant_FName 
