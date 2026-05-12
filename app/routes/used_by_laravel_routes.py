@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 from app.nitb import nitb_get
 
-@router.post("/check-in-nitb/{cnic}")
+@router.get("/check-in-nitb/{cnic}")
 def check_in_nitb(cnic: int):
 
     try:
@@ -132,7 +132,7 @@ def check_in_nitb(cnic: int):
             detail=str(e)
         )
 
-@router.post("/check-in-other-district/{cnic}")
+@router.get("/check-in-other-district/{cnic}")
 def check_in_other_district(cnic: int):
 
     headers = {
