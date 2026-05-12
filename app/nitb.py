@@ -113,7 +113,7 @@ def is_session_valid():
     try:
 
         response = nitb_session.get(
-            f"{BASE_URL}/dashboard",
+            f"{BASE_URL}/marriage-certificate/applications",
             timeout=15,
             allow_redirects=False
         )
