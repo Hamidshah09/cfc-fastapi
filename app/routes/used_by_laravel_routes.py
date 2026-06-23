@@ -447,3 +447,98 @@ def statistics():
             status_code=500,
             detail="Internal server error"
         )
+
+@router.get("/check/{cnic}")
+def check_domicile_status(cnic: str):
+
+    if not cnic:
+        raise HTTPException(
+            status_code=400,
+            detail="CNIC is required"
+        )
+
+    clean_cnic = re.sub(r"\D", "", cnic)
+
+    if len(clean_cnic) != 13:
+        raise HTTPException(
+            status_code=400,
+            detail="CNIC must be 13 digits"
+        )
+
+    try:
+
+        url = (
+            "https://admin-icta.nitb.gov.pk/"
+            f"domicile/applications?keyword={clean_cnic}"
+            "&from=&to=&status=&pagination=25"
+        )
+
+        response = nitb_get(url)
+
+        soup = BeautifulSoup(
+            response.content,
+            "html.parser"
+        )
+
+        table = soup.find("table", id="datatable")
+
+        if not table:
+            return {
+                "status": "success",
+                "verified": False,
+                "message": "No record found",
+                "data": []
+            }
+
+        allowed_statuses = [
+            "Approved (Certificate Ready)",
+            "Delivered"
+        ]
+
+        records = []
+
+        for row in table.select("tbody tr"):
+
+            cols = row.find_all("td")
+
+            if len(cols) < 9:
+                continue
+
+            status = cols[8].get_text(
+                strip=True
+            )
+
+            if status not in allowed_statuses:
+                continue
+
+            records.append({
+                "date": cols[1].get_text(strip=True),
+                "name": cols[2].get_text(strip=True),
+                "cnic": cols[3].get_text(strip=True),
+                "service_type": cols[4].get_text(strip=True),
+                "request_type": cols[6].get_text(strip=True),
+                "token_no": cols[7].get_text(strip=True),
+                "status": status,
+            })
+
+        if not records:
+            return {
+                "status": "success",
+                "verified": False,
+                "message": "No verified domicile found",
+                "data": []
+            }
+
+        return {
+            "status": "success",
+            "verified": True,
+            "records": len(records),
+            "message": "Domicile verified",
+            "data": records
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )

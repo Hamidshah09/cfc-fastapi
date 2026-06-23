@@ -9,7 +9,7 @@ from openpyxl import load_workbook
 
 from app import config
 from app.database import open_con
-from app.nitb import approve, nitb_session, get_session
+from app.nitb import approve, nitb_get
 from datetime import date, datetime
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -24,53 +24,16 @@ def approve_request(id: int):
     return {"status": "success", "message": f"Request {id} approved"}
 
 
-@router.get("/check/{cnic}")
-def check_domicile_status(cnic: str):
-    if not cnic:
-        raise HTTPException(status_code=400, detail="CNIC is required")
 
-    # Remove non-digits (handles both '61101-4561237-8' and '6110145612378')
-    clean_cnic = re.sub(r"\D", "", cnic)
-    if len(clean_cnic) != 13:
-        raise HTTPException(status_code=400, detail="CNIC must be 13 digits (e.g., 61101-4561237-8)")
-
-    try:
-        con, cur = open_con()
-        if type(con) is str:
-            logger.error("Database connection failed: %s", cur)
-            raise HTTPException(status_code=500, detail=f"Database connection failed: {cur}")
-
-        cur.execute(
-            "SELECT receipt_no, Status, First_Name, remarks FROM domicile WHERE cnic = %s",
-            (clean_cnic,)
-        )
-        result = cur.fetchone()
-        cur.close()
-        con.close()
-
-        if result:
-            return {"status": result}
-        else:
-            raise HTTPException(status_code=404, detail="Record not found")
-
-    except HTTPException:
-        raise
-    except Exception as exc:
-        logger.exception("Error checking domicile status for CNIC %s", clean_cnic)
-        raise HTTPException(status_code=500, detail=f"Something went wrong: {str(exc)}")
 
 
 @router.get('/statistics/check')
 def statistics():
-    global nitb_session
-    if nitb_session is None:
-        nitb_session = get_session()
-        if not nitb_session:
-            raise HTTPException(status_code=500, detail="Unable to connect to NITB")
+    
 
     url = f"{config.NITB_BASE}/dashboard/statistics"
     try:
-        page = nitb_session.get(url, timeout=30)
+        page = nitb_get(url, timeout=30)
         logger.debug("Statistics page fetched, length=%s", len(page.content))
         page.raise_for_status()
     except Exception:
@@ -135,15 +98,11 @@ def check_domicile_status(cnic: str):
 
 @router.get('/statistics/check')
 def statistics():
-    global nitb_session
-    if nitb_session is None:
-        nitb_session = get_session()
-        if not nitb_session:
-            raise HTTPException(status_code=500, detail="Unable to connect to NITB")
+    
 
     url = f"{config.NITB_BASE}/dashboard/statistics"
     try:
-        page = nitb_session.get(url, timeout=30)
+        page = nitb_get(url, timeout=30)
         print(page.content)
         page.raise_for_status()
     except Exception:
